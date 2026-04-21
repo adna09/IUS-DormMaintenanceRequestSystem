@@ -1,6 +1,60 @@
 @Dorm.Api_HostAddress = http://localhost:5265
+@StudentEmail = student1@ius.edu.ba
+@StudentPassword = Student123!
+@AuthToken = replace_with_token
 
-GET {{Dorm.Api_HostAddress}}/weatherforecast/
+### Register (Student)
+POST {{Dorm.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Student One",
+  "email": "{{StudentEmail}}",
+  "password": "{{StudentPassword}}",
+  "role": 0,
+  "dormRoom": "A-203",
+  "phoneNumber": "+38761000111"
+}
+
+###
+
+### Login
+POST {{Dorm.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{StudentEmail}}",
+  "password": "{{StudentPassword}}"
+}
+
+###
+
+### Example protected endpoint test template
+### Replace /api/your-protected-route when available
+GET {{Dorm.Api_HostAddress}}/api/your-protected-route
 Accept: application/json
+Authorization: Bearer {{AuthToken}}
+
+###
+
+### Create Maintenance Request (Student)
+POST {{Dorm.Api_HostAddress}}/api/maintenance-requests
+Content-Type: application/json
+Authorization: Bearer {{AuthToken}}
+
+{
+  "title": "Water leakage in bathroom",
+  "description": "The sink pipe is leaking and floor gets wet.",
+  "location": "Dorm A - Room 203",
+  "priority": 2,
+  "categoryId": "00000000-0000-0000-0000-000000000000"
+}
+
+###
+
+### Get My Maintenance Requests (Student)
+GET {{Dorm.Api_HostAddress}}/api/maintenance-requests/my
+Accept: application/json
+Authorization: Bearer {{AuthToken}}
 
 ###

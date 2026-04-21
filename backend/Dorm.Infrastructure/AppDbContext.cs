@@ -27,7 +27,8 @@ public class AppDbContext : DbContext
             e.Property(u => u.Id).ValueGeneratedOnAdd();
             e.Property(u => u.FullName).IsRequired().HasMaxLength(150);
             e.Property(u => u.Email).IsRequired().HasMaxLength(200);
-            e.HasIndex(u => u.Email).IsUnique();
+            e.Property(u => u.NormalizedEmail).IsRequired().HasMaxLength(200);
+            e.HasIndex(u => u.NormalizedEmail).IsUnique();
             e.Property(u => u.PasswordHash).IsRequired();
             e.Property(u => u.Role).HasConversion<string>();
             e.Property(u => u.PhoneNumber).HasMaxLength(20);

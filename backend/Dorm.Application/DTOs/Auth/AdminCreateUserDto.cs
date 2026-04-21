@@ -1,8 +1,9 @@
+using Dorm.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace Dorm.Application.DTOs.Auth;
 
-public class RegisterDto
+public class AdminCreateUserDto
 {
     [Required]
     [MaxLength(150)]
@@ -16,6 +17,9 @@ public class RegisterDto
     [Required]
     [MinLength(6)]
     public string Password { get; set; } = string.Empty;
+
+    [Required]
+    public Role Role { get; set; }
 
     [MaxLength(20)]
     public string? DormRoom { get; set; }

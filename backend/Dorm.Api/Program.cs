@@ -1,5 +1,7 @@
 using Dorm.Application.Interfaces;
+using Dorm.Application.Services;
 using Dorm.Infrastructure;
+using Dorm.Infrastructure.Repositories;
 using Dorm.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +39,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddScoped<IMaintenanceRequestService, MaintenanceRequestService>();
 
 // JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

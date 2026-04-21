@@ -1,10 +1,8 @@
 using Dorm.Application.DTOs.MaintenanceRequests;
-using Dorm.Domain.Entities;
+using Dorm.Application.Interfaces;
 using Dorm.Domain.Enums;
-using Dorm.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Dorm.Api.Controllers;
@@ -14,11 +12,11 @@ namespace Dorm.Api.Controllers;
 [Authorize]
 public class MaintenanceRequestsController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IMaintenanceRequestService _maintenanceRequestService;
 
-    public MaintenanceRequestsController(AppDbContext context)
+    public MaintenanceRequestsController(IMaintenanceRequestService maintenanceRequestService)
     {
-        _context = context;
+        _maintenanceRequestService = maintenanceRequestService;
     }
 
     [HttpPost]
@@ -28,33 +26,19 @@ public class MaintenanceRequestsController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var categoryExists = await _context.Categories
-            .AnyAsync(c => c.Id == dto.CategoryId && c.IsActive);
-        if (!categoryExists)
-            return BadRequest(new { message = "Selected category is invalid or inactive." });
-
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdClaim, out var studentId))
             return Unauthorized(new { message = "Invalid user token." });
 
-        var request = new MaintenanceRequest
+        try
         {
-            Id = Guid.NewGuid(),
-            Title = dto.Title,
-            Description = dto.Description,
-            Location = dto.Location,
-            Priority = dto.Priority,
-            Status = RequestStatus.Pending,
-            StudentId = studentId,
-            CategoryId = dto.CategoryId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        _context.MaintenanceRequests.Add(request);
-        await _context.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetMy), new { }, new { request.Id });
+            var requestId = await _maintenanceRequestService.CreateAsync(studentId, dto);
+            return CreatedAtAction(nameof(GetMy), new { }, new { Id = requestId });
+        }
+        catch (InvalidOperationException)
+        {
+            return BadRequest(new { message = "Selected category is invalid or inactive." });
+        }
     }
 
     [HttpGet("my")]
@@ -65,26 +49,7 @@ public class MaintenanceRequestsController : ControllerBase
         if (!Guid.TryParse(userIdClaim, out var studentId))
             return Unauthorized(new { message = "Invalid user token." });
 
-        var requests = await _context.MaintenanceRequests
-            .AsNoTracking()
-            .Where(r => r.StudentId == studentId)
-            .Include(r => r.Category)
-            .OrderByDescending(r => r.CreatedAt)
-            .Select(r => new MaintenanceRequestListItemDto
-            {
-                Id = r.Id,
-                Title = r.Title,
-                Description = r.Description,
-                Location = r.Location,
-                Priority = r.Priority.ToString(),
-                Status = r.Status.ToString(),
-                CategoryId = r.CategoryId,
-                CategoryName = r.Category.Name,
-                CreatedAt = r.CreatedAt,
-                UpdatedAt = r.UpdatedAt
-            })
-            .ToListAsync();
-
+        var requests = await _maintenanceRequestService.GetMyAsync(studentId);
         return Ok(requests);
     }
 }

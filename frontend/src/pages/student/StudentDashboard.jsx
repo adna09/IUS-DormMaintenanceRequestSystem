@@ -10,10 +10,14 @@ import libraryImg from "../../assets/rooms/Library.png";
 import chillImg from "../../assets/rooms/Chill-room.png";
 import ironingImg from "../../assets/rooms/Ironing-room.png";
 import {
+  BookOpen,
   ChevronLeft,
   ChevronRight,
+  Hand,
   Image as ImageIcon,
+  Library,
   Sparkles,
+  Shirt,
   Users,
 } from "lucide-react";
 import { createRequest } from "../../utils/requests";
@@ -340,6 +344,33 @@ export default function StudentDashboard() {
                     <p className="mt-2 text-sm text-muted-foreground">“{o.text}”</p>
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-5 rounded-xl border bg-background p-4">
+                <h3 className="text-sm font-semibold">Dorm facilities</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Quick overview of shared spaces available in the dorm.
+                </p>
+
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {[
+                    { icon: Library, label: "Library" },
+                    { icon: BookOpen, label: "Study rooms" },
+                    { icon: Users, label: "Chill room" },
+                    { icon: Hand, label: "Prayer room" },
+                    { icon: Shirt, label: "Ironing room" },
+                  ].map((x) => (
+                    <div
+                      key={x.label}
+                      className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm"
+                    >
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent text-accent-foreground">
+                        <x.icon className="h-4 w-4" />
+                      </span>
+                      <span className="text-sm font-medium">{x.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

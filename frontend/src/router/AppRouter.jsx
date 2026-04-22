@@ -6,8 +6,15 @@ import Sidebar from "../components/Sidebar";
 import LoginPage from "../pages/auth/LoginPage";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
+import SubmitRequest from "../pages/student/SubmitRequest";
+import MyRequests from "../pages/student/MyRequests";
 import StaffDashboard from "../pages/staff/StaffDashboard";
+import AssignedRequest from "../pages/staff/AssignedRequest";
+import ResolvedRequest from "../pages/staff/ResolvedRequest";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import ManageUsers from "../pages/admin/ManageUsers";
+import AllRequests from "../pages/admin/AllRequests";
+import Analytics from "../pages/admin/Analytics";
 
 // layout
 function Layout({ children }) {
@@ -18,7 +25,15 @@ function Layout({ children }) {
       <div style={{ display: "flex", flex: 1 }}>
         <Sidebar />
 
-        <div style={{ flex: 1, padding: 20, background: "#f4f6fb" }}>
+        <div
+          style={{
+            flex: 1,
+            padding: 20,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+          }}
+        >
           {children}
         </div>
       </div>
@@ -64,6 +79,28 @@ export default function AppRouter() {
           }
         />
 
+        <Route
+          path="/student/submit"
+          element={
+            <Protected>
+              <Layout>
+                <SubmitRequest />
+              </Layout>
+            </Protected>
+          }
+        />
+
+        <Route
+          path="/student/my-requests"
+          element={
+            <Protected>
+              <Layout>
+                <MyRequests />
+              </Layout>
+            </Protected>
+          }
+        />
+
         {/* STAFF */}
         <Route
           path="/staff/dashboard"
@@ -76,6 +113,28 @@ export default function AppRouter() {
           }
         />
 
+        <Route
+          path="/staff/assigned"
+          element={
+            <Protected>
+              <Layout>
+                <AssignedRequest />
+              </Layout>
+            </Protected>
+          }
+        />
+
+        <Route
+          path="/staff/resolve"
+          element={
+            <Protected>
+              <Layout>
+                <ResolvedRequest />
+              </Layout>
+            </Protected>
+          }
+        />
+
         {/* ADMIN */}
         <Route
           path="/admin/dashboard"
@@ -83,6 +142,39 @@ export default function AppRouter() {
             <Protected>
               <Layout>
                 <AdminDashboard />
+              </Layout>
+            </Protected>
+          }
+        />
+
+        <Route
+          path="/admin/users"
+          element={
+            <Protected>
+              <Layout>
+                <ManageUsers />
+              </Layout>
+            </Protected>
+          }
+        />
+
+        <Route
+          path="/admin/requests"
+          element={
+            <Protected>
+              <Layout>
+                <AllRequests />
+              </Layout>
+            </Protected>
+          }
+        />
+
+        <Route
+          path="/admin/analytics"
+          element={
+            <Protected>
+              <Layout>
+                <Analytics />
               </Layout>
             </Protected>
           }

@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { theme } from "../styles/theme";
+import { Home, Send, ListChecks, Shield, Wrench, Users } from "lucide-react";
+import logo from "../assets/ius-logo.png";
 
 const getUser = () => {
   try {
@@ -20,76 +21,67 @@ export default function Sidebar() {
 
   const menu = {
     student: [
-      { label: "Dashboard", path: "/student/dashboard" },
-      { label: "Submit Request", path: "/student/submit" },
-      { label: "My Requests", path: "/student/my-requests" },
+      { label: "Dashboard", path: "/student/dashboard", icon: Home },
+      { label: "Submit Request", path: "/student/submit", icon: Send },
+      { label: "My Requests", path: "/student/my-requests", icon: ListChecks },
     ],
 
     staff: [
-      { label: "Dashboard", path: "/staff/dashboard" },
-      { label: "Assigned Requests", path: "/staff/assigned" },
-      { label: "Resolve Requests", path: "/staff/resolve" },
+      { label: "Dashboard", path: "/staff/dashboard", icon: Home },
+      { label: "Assigned Requests", path: "/staff/assigned", icon: Wrench },
+      { label: "Resolve Requests", path: "/staff/resolve", icon: ListChecks },
     ],
 
     admin: [
-      { label: "Dashboard", path: "/admin/dashboard" },
-      { label: "Manage Users", path: "/admin/users" },
-      { label: "All Requests", path: "/admin/requests" },
-      { label: "Analytics", path: "/admin/analytics" },
+      { label: "Dashboard", path: "/admin/dashboard", icon: Shield },
+      { label: "Manage Users", path: "/admin/users", icon: Users },
+      { label: "All Requests", path: "/admin/requests", icon: ListChecks },
+      { label: "Analytics", path: "/admin/analytics", icon: Home },
     ],
   };
 
   const items = menu[role] || [];
 
   return (
-    <div
-      style={{
-        width: 250,
-        minHeight: "100vh",
-        background: theme.colors.navy,
-        color: "white",
-        padding: 20,
-      }}
-    >
-      {/* APP TITLE */}
-      <h2 style={{ marginBottom: 20 }}>IUS Dorm</h2>
-
-      {/* ROLE BADGE */}
-      <div
-        style={{
-          fontSize: 12,
-          marginBottom: 25,
-          background: "rgba(255,255,255,0.12)",
-          padding: "6px 10px",
-          borderRadius: 8,
-          display: "inline-block",
-        }}
-      >
-        {role.toUpperCase()}
+    <aside className="w-72 border-r border-sky-200 bg-sky-50 text-slate-900">
+      <div className="flex h-16 items-center gap-3 border-b border-sky-200 px-5">
+        <img src={logo} alt="International University logo" className="h-9 w-9" />
+        <div className="leading-tight">
+          <div className="text-sm font-semibold">IUS Dorm</div>
+          <div className="text-xs text-slate-600">Student services</div>
+        </div>
       </div>
 
-      {/* MENU */}
-      {items.map((item) => {
-        const isActive = location.pathname === item.path;
+      <div className="p-5">
+        <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+          <span className="h-2 w-2 rounded-full bg-sky-500" />
+          {role.toUpperCase()}
+        </div>
 
-        return (
-          <div
-            key={item.path}
-            onClick={() => navigate(item.path)}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 8,
-              cursor: "pointer",
-              marginBottom: 8,
-              background: isActive ? "rgba(255,255,255,0.25)" : "transparent",
-              fontWeight: isActive ? "bold" : "normal",
-              transition: "0.2s",
-            }}
-          >
-            {item.label}
-          </div>
-        );
-      })}
-    </div>
+        <nav className="mt-5 space-y-1">
+          {items.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon ?? Home;
+
+            return (
+              <button
+                key={item.path}
+                type="button"
+                onClick={() => navigate(item.path)}
+                className={[
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
+                  isActive
+                    ? "bg-sky-500 text-white shadow-sm"
+                    : "text-slate-700 hover:bg-sky-100 hover:text-slate-900",
+                ].join(" ")}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </aside>
   );
 }

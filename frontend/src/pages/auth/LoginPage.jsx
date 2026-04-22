@@ -17,12 +17,13 @@ export default function LoginPage() {
         return;
     }
 
+
     if (password !== "password") {
         setError("Incorrect password");
         return;
     }
 
-    const user = { role };
+    const user = { role, name: name.trim() };
 
     localStorage.setItem("token", "mock-token");
     localStorage.setItem("user", JSON.stringify(user));

@@ -4,7 +4,6 @@ using Dorm.Infrastructure;
 using Dorm.Infrastructure.Data;
 using Dorm.Infrastructure.Repositories;
 using Dorm.Infrastructure.Services;
-using Dorm.Interfaces.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -33,6 +32,17 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Enter: Bearer {your JWT token}"
     });
 
+});
+
+// CORS — allow Vite dev server
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 // DbContext
@@ -88,6 +98,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

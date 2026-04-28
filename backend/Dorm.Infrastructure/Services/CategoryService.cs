@@ -4,7 +4,7 @@ using Dorm.Domain.Entities;
 using Dorm.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dorm.Interfaces.Services;
+namespace Dorm.Infrastructure.Services;
 
 public class CategoryService : ICategoryService
 {

@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getCurrentUser, listRequests } from "../../utils/requests";
+import { apiGetMyRequests } from "../../utils/api";
 
 function formatDate(iso) {
   try {
@@ -20,10 +21,30 @@ function statusBadge(status) {
 
 export default function MyRequests() {
   const user = useMemo(() => getCurrentUser(), []);
-  const items = useMemo(() => listRequests(), []);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Items are initialized from state initializer
+    async function load() {
+      try {
+        const data = await apiGetMyRequests();
+        if (data) {
+          const mapped = data.map(r => ({
+            ...r,
+            category: r.categoryName || r.category
+          }));
+          setItems(mapped);
+        } else {
+          setItems(listRequests());
+        }
+      } catch (err) {
+        console.error("Failed to fetch requests", err);
+        setItems(listRequests());
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, []);
 
   return (
@@ -47,7 +68,9 @@ export default function MyRequests() {
         </a>
       </div>
 
-      {items.length === 0 ? (
+      {loading ? (
+         <div className="py-10 text-center text-sm text-muted-foreground">Loading requests...</div>
+      ) : items.length === 0 ? (
         <div className="rounded-xl border bg-card p-10 text-center text-card-foreground shadow-sm">
           <h2 className="text-lg font-semibold">No requests yet</h2>
           <p className="mt-2 text-sm text-muted-foreground">

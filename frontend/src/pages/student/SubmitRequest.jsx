@@ -1,29 +1,43 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createRequest, getCurrentUser } from "../../utils/requests";
-
-const categories = [
-  "Facility (water, heating, electricity)",
-  "Room (furniture, broken item)",
-  "Roommates / noise",
-  "Cleaning",
-  "Other",
-];
+import { getCurrentUser, createRequest as mockCreateRequest } from "../../utils/requests";
+import { apiGetCategories, apiCreateRequest } from "../../utils/api";
 
 const priorities = ["Low", "Medium", "High", "Urgent"];
+const defaultMockCategories = [
+  { id: "mock-1", name: "Facility (water, heating, electricity)" },
+  { id: "mock-2", name: "Room (furniture, broken item)" },
+];
 
 export default function SubmitRequest() {
   const navigate = useNavigate();
   const user = useMemo(() => getCurrentUser(), []);
 
+  const [categories, setCategories] = useState([]);
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState(categories[0]);
+  const [categoryId, setCategoryId] = useState("");
   const [location, setLocation] = useState("");
   const [priority, setPriority] = useState("Medium");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
+  const [isApiMode, setIsApiMode] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = (e) => {
+  useEffect(() => {
+    apiGetCategories().then(data => {
+      if (data) {
+        setCategories(data);
+        if (data.length > 0) setCategoryId(data[0].id);
+      } else {
+        // Fallback
+        setIsApiMode(false);
+        setCategories(defaultMockCategories);
+        setCategoryId(defaultMockCategories[0].id);
+      }
+    });
+  }, []);
+
+  const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -31,16 +45,35 @@ export default function SubmitRequest() {
     if (!location.trim()) return setError("Please provide your room / location.");
     if (!description.trim()) return setError("Please describe the issue.");
 
-    createRequest({
-      type: "Maintenance",
-      title: title.trim(),
-      category,
-      location: location.trim(),
-      priority,
-      description: description.trim(),
-    });
+    setLoading(true);
 
-    navigate("/student/my-requests");
+    try {
+      if (isApiMode) {
+        const priorityIndex = priorities.indexOf(priority);
+        await apiCreateRequest({
+          title: title.trim(),
+          description: description.trim(),
+          location: location.trim(),
+          priority: priorityIndex >= 0 ? priorityIndex : 1,
+          categoryId: categoryId,
+        });
+      } else {
+        const catName = categories.find(c => c.id === categoryId)?.name || categoryId;
+        mockCreateRequest({
+          type: "Maintenance",
+          title: title.trim(),
+          category: catName,
+          location: location.trim(),
+          priority,
+          description: description.trim(),
+        });
+      }
+      navigate("/student/my-requests");
+    } catch(err) {
+      setError(err.message || "Failed to submit request.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,6 +103,7 @@ export default function SubmitRequest() {
               placeholder="e.g., Heater not working"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -80,6 +114,7 @@ export default function SubmitRequest() {
               placeholder="e.g., Block A, Room 203"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -87,12 +122,13 @@ export default function SubmitRequest() {
             <label className="text-sm font-medium">Category</label>
             <select
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              disabled={loading || categories.length === 0}
             >
               {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
@@ -104,6 +140,7 @@ export default function SubmitRequest() {
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
+              disabled={loading}
             >
               {priorities.map((p) => (
                 <option key={p} value={p}>
@@ -121,6 +158,7 @@ export default function SubmitRequest() {
             placeholder="What happened? When did it start? Anything staff should know?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={loading}
           />
           <p className="text-xs text-muted-foreground">
             Tip: Include what you tried (restart, switch, breaker, etc.) if relevant.
@@ -136,9 +174,10 @@ export default function SubmitRequest() {
           </a>
           <button
             type="submit"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90"
+            disabled={loading}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Submit request
+            {loading ? "Submitting..." : "Submit request"}
           </button>
         </div>
       </form>

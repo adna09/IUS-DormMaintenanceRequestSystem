@@ -1,42 +1,59 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/ius-logo.png";
+import { apiLogin } from "../../utils/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!name.trim()) {
-      setError("Please enter your name");
+    if (!email.trim() || !password) {
+      setError("Please enter your email and password");
       return;
     }
 
-    if (!role) {
-      setError("Please select a role");
-      return;
+    setLoading(true);
+    try {
+      const res = await apiLogin(email.trim(), password);
+
+      if (!res) {
+        // fallback to localStorage mock when backend is unreachable
+        const fallbackRole = email.includes("admin") ? "admin" : email.includes("staff") ? "staff" : "student";
+        const user = { role: fallbackRole, name: email.split("@")[0] };
+        localStorage.setItem("token", "mock-token");
+        localStorage.setItem("user", JSON.stringify(user));
+        
+        if (fallbackRole === "admin") navigate("/admin/dashboard");
+        else if (fallbackRole === "staff") navigate("/staff/dashboard");
+        else navigate("/student/dashboard");
+        
+        return;
+      }
+
+      // real API success
+      localStorage.setItem("token", res.token);
+      
+      const role = res.role.toLowerCase();
+      localStorage.setItem("user", JSON.stringify({ role, name: res.fullName }));
+
+      if (role === "student") navigate("/student/dashboard");
+      else if (role === "maintenancestaff") navigate("/staff/dashboard");
+      else if (role === "admin") navigate("/admin/dashboard");
+      else navigate("/student/dashboard");
+
+    } catch (err) {
+      setError(err.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
     }
-
-    if (password !== "password") {
-      setError("Incorrect password");
-      return;
-    }
-
-    const user = { role, name: name.trim() };
-
-    localStorage.setItem("token", "mock-token");
-    localStorage.setItem("user", JSON.stringify(user));
-
-    if (role === "student") navigate("/student/dashboard");
-    else if (role === "staff") navigate("/staff/dashboard");
-    else if (role === "admin") navigate("/admin/dashboard");
   };
 
   return (
@@ -53,35 +70,18 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="mt-8 space-y-4">
-          {/* NAME */}
+          {/* EMAIL */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">
-              Full name
+              Email address
             </label>
             <input
-              type="text"
-              placeholder="e.g., Aldin Cimic"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              type="email"
+              placeholder="e.g., admin@dormmanagement.local"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border bg-background px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-sky-500"
             />
-          </div>
-
-          {/* ROLE */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">
-              Role
-            </label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full rounded-lg border bg-background px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-sky-500"
-            >
-              <option value="">Select role</option>
-              <option value="student">Student</option>
-              <option value="staff">Staff</option>
-              <option value="admin">Admin</option>
-            </select>
           </div>
 
           {/* PASSWORD */}
@@ -108,13 +108,14 @@ export default function LoginPage() {
           {/* BUTTON */}
           <button
             type="submit"
-            className="w-full rounded-lg bg-sky-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98]"
+            disabled={loading}
+            className="w-full rounded-lg bg-sky-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Sign in
+            {loading ? "Signing in..." : "Sign in"}
           </button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Default password: <strong>password</strong>
+            Seed admin: <strong>admin@dormmanagement.local</strong> / <strong>AdminPassword123!</strong>
           </p>
         </form>
       </div>

@@ -39,6 +39,12 @@ export default function Sidebar({ open, onClose }) {
       { label: "Resolve Requests", path: "/staff/resolve", icon: ListChecks },
     ],
 
+    maintenancestaff: [
+      { label: "Dashboard", path: "/staff/dashboard", icon: Home },
+      { label: "Assigned Requests", path: "/staff/assigned", icon: Wrench },
+      { label: "Resolve Requests", path: "/staff/resolve", icon: ListChecks },
+    ],
+
     admin: [
       { label: "Dashboard", path: "/admin/dashboard", icon: Shield },
       { label: "Manage Users", path: "/admin/users", icon: Users },
@@ -84,7 +90,7 @@ export default function Sidebar({ open, onClose }) {
         <div className="p-5">
           <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
             <span className="h-2 w-2 rounded-full bg-sky-500" />
-            {role.toUpperCase()}
+            {role.toUpperCase().replace("MAINTENANCESTAFF", "STAFF")}
           </div>
 
           <nav className="mt-5 space-y-1">

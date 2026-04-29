@@ -15,3 +15,7 @@ export const theme = {
 
   font: "'Segoe UI', system-ui, sans-serif",
 };
+
+// Named exports used by PriorityBadge and StatusBadge
+export const C = theme.colors;
+export const FONT = theme.font;

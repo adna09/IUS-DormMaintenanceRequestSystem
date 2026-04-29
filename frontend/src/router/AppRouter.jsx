@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -16,14 +17,16 @@ import ManageUsers from "../pages/admin/ManageUsers";
 import AllRequests from "../pages/admin/AllRequests";
 import Analytics from "../pages/admin/Analytics";
 
-// layout
+// layout with mobile sidebar support
 function Layout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", flexDirection: "column" }}>
-      <Navbar />
+      <Navbar onMenuToggle={() => setSidebarOpen((v) => !v)} />
 
       <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <div
           style={{

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Dorm.Api/Dorm.Api.csproj" />
+  <Project Path="Dorm.Application/Dorm.Application.csproj" />
+  <Project Path="Dorm.Domain/Dorm.Domain.csproj" />
+  <Project Path="Dorm.Infrastructure/Dorm.Infrastructure.csproj" />
+</Solution>

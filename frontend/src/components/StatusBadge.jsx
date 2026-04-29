@@ -1,30 +1,18 @@
-import { C, FONT } from "../styles/theme";
-
 const STATUS = {
-  pending: { label:"Pending", bg:"#fffbeb", color:"#92400e", border:"#fde68a", dot:"#f59e0b" },
-  assigned: { label:"Assigned", bg:"#eff6ff", color:"#1e40af", border:"#bfdbfe", dot:"#3b82f6" },
-  in_progress: { label:"In Progress", bg:"#fff7ed", color:"#9a3412", border:"#fdba74", dot:"#f97316" },
-  resolved: { label:"Resolved", bg:"#f0fdf4", color:"#166534", border:"#86efac", dot:"#22c55e" },
+  pending: { label: "Pending", bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200", dot: "bg-amber-500" },
+  assigned: { label: "Assigned", bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-200", dot: "bg-blue-500" },
+  in_progress: { label: "In Progress", bg: "bg-orange-50", text: "text-orange-800", border: "border-orange-300", dot: "bg-orange-500" },
+  resolved: { label: "Resolved", bg: "bg-green-50", text: "text-green-800", border: "border-green-200", dot: "bg-green-500" },
 };
 
 export default function StatusBadge({ status }) {
-  const s = STATUS[status] || STATUS.pending;
+  const s = STATUS[status] ?? STATUS.pending;
 
   return (
-    <span style={{
-      display:"inline-flex",
-      alignItems:"center",
-      gap:6,
-      padding:"3px 10px",
-      borderRadius:20,
-      background:s.bg,
-      color:s.color,
-      border:`1px solid ${s.border}`,
-      fontSize:12,
-      fontWeight:700,
-      fontFamily:FONT
-    }}>
-      <span style={{ width:7, height:7, borderRadius:"50%", background:s.dot }} />
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${s.bg} ${s.text} ${s.border}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
       {s.label}
     </span>
   );

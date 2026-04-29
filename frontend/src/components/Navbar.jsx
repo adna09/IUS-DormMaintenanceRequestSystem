@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import logo from "../assets/ius-logo.png";
 
 const getUser = () => {
@@ -9,12 +9,23 @@ const getUser = () => {
   }
 };
 
-export default function Navbar() {
+export default function Navbar({ onMenuToggle }) {
   const user = getUser();
   return (
     <div className="sticky top-0 z-40 border-b border-sky-200 bg-sky-50/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-3">
+          {/* Mobile hamburger */}
+          {user && (
+            <button
+              type="button"
+              onClick={onMenuToggle}
+              className="inline-flex items-center justify-center rounded-md p-1.5 hover:bg-sky-100 lg:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
+
           <img src={logo} alt="International University logo" className="h-9 w-9" />
           <div className="leading-tight">
             <div className="text-sm font-semibold tracking-tight">International University</div>

@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { listRequests, updateRequest } from "../../utils/requests";
+import {
+  fetchStaffRequestsMergedFromApi,
+  listRequests,
+  mergeAllRequestsFromApi,
+  updateRequest,
+} from "../../utils/requests";
 
 function toDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -15,16 +20,32 @@ export default function AssignedRequest() {
   const [showAll, setShowAll] = useState(false);
 
   const refresh = useCallback(() => {
-    const all = listRequests().filter((r) => r.status !== "Resolved");
-    const filtered = showAll ? all : all.filter((r) => (r.type ?? "Maintenance") === "Maintenance");
-    setItems(filtered);
+    fetchStaffRequestsMergedFromApi().then((merged) => {
+      const source = merged ?? listRequests();
+      const all = source.filter((r) => r.status !== "Resolved");
+      const filtered = showAll ? all : all.filter((r) => (r.type ?? "Maintenance") === "Maintenance");
+      setItems(filtered);
+    });
+  }, [showAll]);
+  useEffect(() => {
+    mergeAllRequestsFromApi();
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAll]);
 
   useEffect(() => {
-     
-    refresh();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAll]);
+    const onUpdate = () => refresh();
+    window.addEventListener("dorm-requests-changed", onUpdate);
+    return () => window.removeEventListener("dorm-requests-changed", onUpdate);
+  }, [refresh]);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">

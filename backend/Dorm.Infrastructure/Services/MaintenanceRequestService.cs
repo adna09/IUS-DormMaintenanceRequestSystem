@@ -73,6 +73,7 @@ public class MaintenanceRequestService : IMaintenanceRequestService
         var requests = await _context.MaintenanceRequests
             .AsNoTracking()
             .Include(r => r.Category)
+            .Include(r => r.Student)
             .OrderByDescending(r => r.CreatedAt)
             .Select(r => new MaintenanceRequestListItemDto
             {
@@ -85,7 +86,9 @@ public class MaintenanceRequestService : IMaintenanceRequestService
                 CategoryId = r.CategoryId,
                 CategoryName = r.Category.Name,
                 CreatedAt = r.CreatedAt,
-                UpdatedAt = r.UpdatedAt
+                UpdatedAt = r.UpdatedAt,
+                StudentName = r.Student.FullName,
+                StudentEmail = r.Student.Email
             })
             .ToListAsync();
 

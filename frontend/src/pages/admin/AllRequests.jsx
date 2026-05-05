@@ -1,22 +1,36 @@
-import { useEffect, useState } from "react";
-import { listRequests, updateRequest } from "../../utils/requests";
+import { useCallback, useEffect, useState } from "react";
+import {
+  fetchStaffRequestsMergedFromApi,
+  listRequests,
+  mergeAllRequestsFromApi,
+  updateRequest,
+} from "../../utils/requests";
 
 export default function AllRequests() {
   const [items, setItems] = useState([]);
   const [typeFilter, setTypeFilter] = useState("All");
 
-  const refresh = () => {
-    const all = listRequests();
-    const filtered =
-      typeFilter === "All" ? all : all.filter((r) => (r.type ?? "Maintenance") === typeFilter);
-    setItems(filtered);
-  };
+  const refresh = useCallback(() => {
+    fetchStaffRequestsMergedFromApi().then((merged) => {
+      const all = (merged ?? listRequests()) ?? [];
+      const filtered =
+        typeFilter === "All" ? all : all.filter((r) => (r.type ?? "Maintenance") === typeFilter);
+      setItems(filtered);
+    });
+  }, [typeFilter]);
 
   useEffect(() => {
-     
+    mergeAllRequestsFromApi();
+  }, []);
+
+  useEffect(() => {
     refresh();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter]);
+  }, [refresh]);
+
+  useEffect(() => {
+    window.addEventListener("dorm-requests-changed", refresh);
+    return () => window.removeEventListener("dorm-requests-changed", refresh);
+  }, [refresh]);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -24,7 +38,9 @@ export default function AllRequests() {
         <p className="text-sm text-muted-foreground">Admin</p>
         <h1 className="text-2xl font-semibold tracking-tight">All requests</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Supervise the workflow and monitor maintenance volume/status.
+          Supervise the workflow and monitor maintenance volume/status. Request rows come from the
+          database (<code className="rounded bg-muted px-1 text-xs">dbo.MaintenanceRequests</code>
+          via API) plus any mock entries in this browser.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {["All", "Maintenance", "Room selection"].map((t) => (

@@ -13,8 +13,11 @@ function formatDate(iso) {
 function statusBadge(status) {
   const map = {
     Submitted: "bg-red-600 text-white",
+    Pending: "bg-red-600 text-white",
     Assigned: "bg-blue-600 text-white",
+    InProgress: "bg-blue-600 text-white",
     Resolved: "bg-green-600 text-white",
+    Cancelled: "bg-muted text-foreground",
   };
   return map[status] ?? "bg-muted text-foreground";
 }

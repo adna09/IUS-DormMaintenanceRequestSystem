@@ -23,4 +23,7 @@ public class RegisterDto
     [Phone]
     [MaxLength(20)]
     public string? PhoneNumber { get; set; }
+
+    [MaxLength(32)]
+    public string? RegistrationRole { get; set; }
 }

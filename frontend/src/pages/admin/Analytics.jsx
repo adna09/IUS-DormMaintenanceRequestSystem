@@ -1,5 +1,9 @@
-import { useMemo } from "react";
-import { listRequests } from "../../utils/requests";
+import { useEffect, useMemo, useState } from "react";
+import {
+  fetchStaffRequestsMergedFromApi,
+  listRequests,
+  mergeAllRequestsFromApi,
+} from "../../utils/requests";
 import { getSlaHoursForRequest, isOverdue } from "../../utils/sla";
 
 function BarRow({ label, value, max }) {
@@ -18,8 +22,35 @@ function BarRow({ label, value, max }) {
 }
 
 export default function Analytics() {
+  const [storeVersion, setStoreVersion] = useState(0);
+  const [apiRows, setApiRows] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStaffRequestsMergedFromApi().then((merged) => {
+      if (!cancelled && merged) setApiRows(merged);
+    });
+    mergeAllRequestsFromApi().finally(() => {
+      if (!cancelled) setStoreVersion((v) => v + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const reloadFromApi = () => {
+      fetchStaffRequestsMergedFromApi().then((merged) => {
+        setApiRows(merged ?? null);
+        setStoreVersion((v) => v + 1);
+      });
+    };
+    window.addEventListener("dorm-requests-changed", reloadFromApi);
+    return () => window.removeEventListener("dorm-requests-changed", reloadFromApi);
+  }, []);
+
   const stats = useMemo(() => {
-    const items = listRequests();
+    const items = apiRows ?? listRequests();
     const open = items.filter((r) => r.status !== "Resolved");
     const overdue = open.filter((r) => isOverdue(r));
 
@@ -56,7 +87,8 @@ export default function Analytics() {
       overdueByCategory,
       slaBuckets,
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeVersion, apiRows]);
 
   const statusMax = Math.max(...Object.values(stats.byStatus), 0);
   const typeMax = Math.max(...Object.values(stats.byType), 0);

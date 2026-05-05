@@ -42,9 +42,16 @@ export default function Navbar({ onMenuToggle }) {
 
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
+                const provider = localStorage.getItem("authProvider");
                 localStorage.removeItem("token");
                 localStorage.removeItem("user");
+                localStorage.removeItem("authProvider");
+                if (provider === "azure") {
+                  const { signOutAzure } = await import("../auth/azureAuth.js");
+                  await signOutAzure();
+                  return;
+                }
                 window.location.href = "/login";
               }}
               className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"

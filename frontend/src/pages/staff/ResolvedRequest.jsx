@@ -1,13 +1,32 @@
-import { useEffect, useState } from "react";
-import { listRequests } from "../../utils/requests";
+import { useCallback, useEffect, useState } from "react";
+import {
+  fetchStaffRequestsMergedFromApi,
+  listRequests,
+  mergeAllRequestsFromApi,
+} from "../../utils/requests";
 
 export default function ResolvedRequest() {
   const [items, setItems] = useState([]);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setItems(listRequests().filter((r) => r.status === "Resolved"));
+  const reload = useCallback(() => {
+    fetchStaffRequestsMergedFromApi().then((merged) => {
+      const source = merged ?? listRequests();
+      setItems(source.filter((r) => r.status === "Resolved"));
+    });
   }, []);
+
+  useEffect(() => {
+    mergeAllRequestsFromApi();
+  }, []);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  useEffect(() => {
+    window.addEventListener("dorm-requests-changed", reload);
+    return () => window.removeEventListener("dorm-requests-changed", reload);
+  }, [reload]);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">

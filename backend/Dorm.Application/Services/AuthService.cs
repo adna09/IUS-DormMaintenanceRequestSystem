@@ -28,6 +28,8 @@ public class AuthService : IAuthService
         if (exists)
             throw new InvalidOperationException("duplicate_email");
 
+        var role = ResolveRegistrationRole(normalizedEmail, dto.RegistrationRole);
+
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -35,7 +37,7 @@ public class AuthService : IAuthService
             Email = dto.Email.Trim(),
             NormalizedEmail = normalizedEmail,
             PasswordHash = _passwordHasher.HashPassword(dto.Password),
-            Role = Role.Student,
+            Role = role,
             PhoneNumber = dto.PhoneNumber,
             DormRoom = dto.DormRoom,
             IsActive = true,
@@ -89,7 +91,22 @@ public class AuthService : IAuthService
         if (!user.IsActive)
             throw new UnauthorizedAccessException("invalid_credentials");
 
+        await SyncRoleFromEmailDomainIfNeededAsync(user, normalizedEmail).ConfigureAwait(false);
+
         return ToAuthResponse(user);
+    }
+
+    private async Task SyncRoleFromEmailDomainIfNeededAsync(User user, string normalizedEmail)
+    {
+        var domainRole = TryGetRoleFromEmailDomain(normalizedEmail);
+        if (!domainRole.HasValue || user.Role == Role.Admin)
+            return;
+
+        if (user.Role == domainRole.Value)
+            return;
+
+        user.Role = domainRole.Value;
+        await _userAuthRepository.SaveChangesAsync().ConfigureAwait(false);
     }
 
     private AuthResponseDto ToAuthResponse(User user)
@@ -107,5 +124,42 @@ public class AuthService : IAuthService
     private static string NormalizeEmail(string email)
     {
         return email.Trim().ToLowerInvariant();
+    }
+
+    private static Role ResolveRegistrationRole(string normalizedEmail, string? registrationRole)
+    {
+        var domainRole = TryGetRoleFromEmailDomain(normalizedEmail);
+        if (domainRole.HasValue)
+            return domainRole.Value;
+
+        if (string.IsNullOrWhiteSpace(registrationRole))
+            return Role.Student;
+
+        var s = registrationRole.Trim();
+        if (string.Equals(s, nameof(Role.Student), StringComparison.OrdinalIgnoreCase))
+            return Role.Student;
+        if (string.Equals(s, nameof(Role.MaintenanceStaff), StringComparison.OrdinalIgnoreCase))
+            return Role.MaintenanceStaff;
+        if (string.Equals(s, "maintenanceStaff", StringComparison.OrdinalIgnoreCase))
+            return Role.MaintenanceStaff;
+        if (string.Equals(s, "staff", StringComparison.OrdinalIgnoreCase))
+            return Role.MaintenanceStaff;
+
+        throw new ArgumentException("invalid_registration_role");
+    }
+
+    private static Role? TryGetRoleFromEmailDomain(string normalizedEmail)
+    {
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+            return null;
+
+        // Aligned with frontend authRole.js: suffix match on normalized address.
+        // (Exact host parsing would miss intentional parity with FE and some subdomains.)
+        if (normalizedEmail.EndsWith("@student.com", StringComparison.Ordinal))
+            return Role.Student;
+        if (normalizedEmail.EndsWith("@staff.com", StringComparison.Ordinal))
+            return Role.MaintenanceStaff;
+
+        return null;
     }
 }

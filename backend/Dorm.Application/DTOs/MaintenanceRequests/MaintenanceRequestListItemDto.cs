@@ -12,4 +12,9 @@ public class MaintenanceRequestListItemDto
     public string CategoryName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>Populated when listing requests for staff/admin.</summary>
+    public string? StudentName { get; set; }
+
+    public string? StudentEmail { get; set; }
 }

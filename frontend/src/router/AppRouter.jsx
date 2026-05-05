@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
 import LoginPage from "../pages/auth/LoginPage";
+import AuthRedirect from "../pages/auth/AuthRedirect";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
 import SubmitRequest from "../pages/student/SubmitRequest";
@@ -63,6 +64,9 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+
+        {/* Microsoft Entra ID redirect (must match VITE_AZURE_REDIRECT_URI path) */}
+        <Route path="/auth" element={<AuthRedirect />} />
 
         {/* LOGIN */}
         <Route path="/login" element={<LoginPage />} />

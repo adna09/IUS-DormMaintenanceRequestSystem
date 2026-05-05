@@ -1,8 +1,10 @@
+using System.Security.Claims;
 using Dorm.Application.DTOs.Auth;
 using Dorm.Application.Interfaces;
 using Dorm.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace Dorm.Api.Controllers;
 
 [ApiController]
@@ -27,6 +29,10 @@ public class AuthController : ControllerBase
         {
             var response = await _authService.RegisterAsync(dto);
             return Ok(response);
+        }
+        catch (ArgumentException)
+        {
+            return BadRequest(new { message = "Choose a valid account type (student or maintenance staff)." });
         }
         catch (InvalidOperationException)
         {
@@ -84,5 +90,28 @@ public class AuthController : ControllerBase
         {
             return Unauthorized(new { message = "Login failed." });
         }
+    }
+
+    [HttpGet("me")]
+    [Authorize]
+    public IActionResult Me()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userId, out var id))
+        {
+            return Unauthorized(new
+            {
+                message = "Your Microsoft account is not linked to a user in this database. " +
+                            "Ask an administrator to create an account with the same email address."
+            });
+        }
+
+        return Ok(new
+        {
+            userId = id,
+            fullName = User.FindFirstValue(ClaimTypes.Name),
+            email = User.FindFirstValue(ClaimTypes.Email),
+            role = User.FindFirstValue(ClaimTypes.Role)
+        });
     }
 }

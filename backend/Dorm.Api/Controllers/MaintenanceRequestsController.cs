@@ -41,6 +41,15 @@ public class MaintenanceRequestsController : ControllerBase
         }
     }
 
+    /// <summary>All requests (SQL). Staff and admins use this to stay in sync with the database.</summary>
+    [HttpGet]
+    [Authorize(Roles = nameof(Role.Admin) + "," + nameof(Role.MaintenanceStaff))]
+    public async Task<IActionResult> GetAll()
+    {
+        var list = await _maintenanceRequestService.GetAllAsync();
+        return Ok(list);
+    }
+
     [HttpGet("my")]
     [Authorize(Roles = nameof(Role.Student))]
     public async Task<IActionResult> GetMy()

@@ -50,12 +50,26 @@ export default function SubmitRequest() {
     try {
       if (isApiMode) {
         const priorityIndex = priorities.indexOf(priority);
-        await apiCreateRequest({
+        const catName =
+          categories.find((c) => c.id === categoryId)?.name || "Maintenance";
+        const result = await apiCreateRequest({
           title: title.trim(),
           description: description.trim(),
           location: location.trim(),
           priority: priorityIndex >= 0 ? priorityIndex : 1,
           categoryId: categoryId,
+        });
+        const apiId = result?.id ?? result?.Id;
+        mockCreateRequest({
+          ...(apiId != null && apiId !== "" ? { id: String(apiId) } : {}),
+          type: "Maintenance",
+          title: title.trim(),
+          category: catName,
+          location: location.trim(),
+          priority,
+          description: description.trim(),
+          status: "Submitted",
+          source: "api",
         });
       } else {
         const catName = categories.find(c => c.id === categoryId)?.name || categoryId;

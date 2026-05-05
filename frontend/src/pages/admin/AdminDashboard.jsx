@@ -1,5 +1,9 @@
-import { useMemo } from "react";
-import { listRequests } from "../../utils/requests";
+import { useEffect, useMemo, useState } from "react";
+import {
+  fetchStaffRequestsMergedFromApi,
+  listRequests,
+  mergeAllRequestsFromApi,
+} from "../../utils/requests";
 import { getDueAt, isNew, isOverdue } from "../../utils/sla";
 
 function formatDate(iso) {
@@ -26,8 +30,46 @@ function BarRow({ label, value, max }) {
 }
 
 export default function AdminDashboard() {
+  const [storeVersion, setStoreVersion] = useState(0);
+  const [apiRows, setApiRows] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStaffRequestsMergedFromApi().then((merged) => {
+      if (!cancelled && merged) setApiRows(merged);
+    });
+    mergeAllRequestsFromApi().finally(() => {
+      if (!cancelled) setStoreVersion((v) => v + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onFocus = () => {
+      fetchStaffRequestsMergedFromApi().then((merged) => {
+        if (merged) setApiRows(merged);
+      });
+      mergeAllRequestsFromApi().finally(() => setStoreVersion((v) => v + 1));
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  useEffect(() => {
+    const reloadFromApi = () => {
+      fetchStaffRequestsMergedFromApi().then((merged) => {
+        setApiRows(merged ?? null);
+        setStoreVersion((v) => v + 1);
+      });
+    };
+    window.addEventListener("dorm-requests-changed", reloadFromApi);
+    return () => window.removeEventListener("dorm-requests-changed", reloadFromApi);
+  }, []);
+
   const data = useMemo(() => {
-    const items = listRequests();
+    const items = apiRows ?? listRequests();
     const maintenance = items.filter((r) => (r.type ?? "Maintenance") === "Maintenance");
     const roomSel = items.filter((r) => (r.type ?? "Maintenance") === "Room selection");
 
@@ -42,9 +84,9 @@ export default function AdminDashboard() {
       return acc;
     }, {});
 
-    const recent = [...items]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 6);
+    const sortedNewestFirst = [...items].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     return {
       items,
@@ -55,9 +97,11 @@ export default function AdminDashboard() {
       overdue,
       newlyReceived,
       byStatus,
-      recent,
+      /** Full list for dashboard table (not capped). Use /admin/requests for filters. */
+      sortedNewestFirst,
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeVersion, apiRows]);
 
   const statusMax = Math.max(...Object.values(data.byStatus), 0);
 
@@ -107,9 +151,9 @@ export default function AdminDashboard() {
         <div className="rounded-xl border bg-card p-5 shadow-sm lg:col-span-2">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-sm font-semibold">Recent requests</div>
+              <div className="text-sm font-semibold">Requests (newest first)</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Shows due time targets for maintenance categories (cleaning faster, heaters longer).
+                All loaded tickets from the server and this browser. Scroll for older items.
               </div>
             </div>
             <a
@@ -120,7 +164,7 @@ export default function AdminDashboard() {
             </a>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-xl border">
+          <div className="mt-4 max-h-[28rem] overflow-y-auto overflow-hidden rounded-xl border">
             <div className="grid grid-cols-12 gap-0 bg-muted px-4 py-2 text-xs font-medium text-muted-foreground">
               <div className="col-span-5">Title</div>
               <div className="col-span-2">Type</div>
@@ -128,7 +172,13 @@ export default function AdminDashboard() {
               <div className="col-span-3">Due</div>
             </div>
             <div className="divide-y">
-              {data.recent.map((r) => {
+              {data.sortedNewestFirst.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  No requests yet — ensure the API is running and you&apos;re logged in as admin so data can sync from
+                  the database.
+                </div>
+              ) : (
+                data.sortedNewestFirst.map((r) => {
                 const due = getDueAt(r);
                 const overdue = isOverdue(r);
                 const newFlag = isNew(r, 6);
@@ -176,7 +226,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 );
-              })}
+                })
+              )}
             </div>
           </div>
         </div>

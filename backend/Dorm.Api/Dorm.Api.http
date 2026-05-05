@@ -2,6 +2,9 @@
 @StudentEmail = student1@ius.edu.ba
 @StudentPassword = Student123!
 @AuthToken = replace_with_token
+@StaffAuthToken = replace_with_staff_token
+@RequestId = 00000000-0000-0000-0000-000000000000
+@StaffUserId = 00000000-0000-0000-0000-000000000000
 
 ### Register (Student)
 POST {{Dorm.Api_HostAddress}}/api/auth/register
@@ -56,5 +59,45 @@ Authorization: Bearer {{AuthToken}}
 GET {{Dorm.Api_HostAddress}}/api/maintenance-requests/my
 Accept: application/json
 Authorization: Bearer {{AuthToken}}
+
+###
+
+### Update My Maintenance Request (Student)
+PUT {{Dorm.Api_HostAddress}}/api/maintenance-requests/{{RequestId}}
+Content-Type: application/json
+Authorization: Bearer {{AuthToken}}
+
+{
+  "title": "Water leakage in bathroom (updated)",
+  "description": "Leak is worse; please prioritize.",
+  "location": "Dorm A - Room 203",
+  "priority": 2,
+  "categoryId": "00000000-0000-0000-0000-000000000000"
+}
+
+###
+
+### Delete My Maintenance Request (Student)
+DELETE {{Dorm.Api_HostAddress}}/api/maintenance-requests/{{RequestId}}
+Authorization: Bearer {{AuthToken}}
+
+###
+
+### List All Maintenance Requests (MaintenanceStaff or Admin)
+GET {{Dorm.Api_HostAddress}}/api/maintenance-requests
+Accept: application/json
+Authorization: Bearer {{StaffAuthToken}}
+
+###
+
+### Update Request Status (MaintenanceStaff or Admin)
+PATCH {{Dorm.Api_HostAddress}}/api/maintenance-requests/{{RequestId}}/status
+Content-Type: application/json
+Authorization: Bearer {{StaffAuthToken}}
+
+{
+  "status": 1,
+  "assignedStaffId": "{{StaffUserId}}"
+}
 
 ###

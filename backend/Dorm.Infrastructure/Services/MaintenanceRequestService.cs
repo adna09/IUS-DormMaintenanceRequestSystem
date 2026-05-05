@@ -92,6 +92,28 @@ public class MaintenanceRequestService : IMaintenanceRequestService
         return requests;
     }
 
+    public async Task<MaintenanceRequestListItemDto?> GetByIdAsync(Guid requestId)
+    {
+        return await _context.MaintenanceRequests
+            .AsNoTracking()
+            .Where(r => r.Id == requestId)
+            .Include(r => r.Category)
+            .Select(r => new MaintenanceRequestListItemDto
+            {
+                Id = r.Id,
+                Title = r.Title,
+                Description = r.Description,
+                Location = r.Location,
+                Priority = r.Priority.ToString(),
+                Status = r.Status.ToString(),
+                CategoryId = r.CategoryId,
+                CategoryName = r.Category.Name,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            })
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<bool> UpdateAsync(Guid requestId, Guid studentId, UpdateMaintenanceRequestDto dto)
     {
         var request = await _context.MaintenanceRequests
@@ -178,6 +200,112 @@ public class MaintenanceRequestService : IMaintenanceRequestService
         request.Status = dto.Status;
         request.ResolvedAt = dto.Status == RequestStatus.Resolved ? DateTime.UtcNow : null;
         request.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> AssignAsync(Guid requestId, Guid assignedById, AssignRequestDto dto)
+    {
+        var request = await _context.MaintenanceRequests
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request is null)
+            return false;
+
+        var staffExists = await _context.Users
+            .AnyAsync(u => u.Id == dto.StaffId && u.Role == Role.MaintenanceStaff && u.IsActive);
+
+        if (!staffExists)
+            throw new InvalidOperationException("invalid_staff");
+
+        request.AssignedStaffId = dto.StaffId;
+        request.Status = RequestStatus.Assigned;
+        request.UpdatedAt = DateTime.UtcNow;
+
+        var assignmentLog = new AssignmentLog
+        {
+            Id = Guid.NewGuid(),
+            RequestId = requestId,
+            AssignedById = assignedById,
+            AssignedToId = dto.StaffId,
+            AssignedAt = DateTime.UtcNow,
+            Note = dto.Note
+        };
+
+        await _context.AssignmentLogs.AddAsync(assignmentLog);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ResolveAsync(Guid requestId, Guid resolvedById, ResolveRequestDto dto)
+    {
+        var request = await _context.MaintenanceRequests
+            .Include(r => r.ResolutionLog)
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request is null)
+            return false;
+
+        if (request.ResolutionLog is null)
+        {
+            var resolutionLog = new ResolutionLog
+            {
+                Id = Guid.NewGuid(),
+                RequestId = requestId,
+                ResolvedById = resolvedById,
+                ResolutionNotes = dto.ResolutionNotes,
+                WorkDone = dto.WorkDone,
+                PartsUsed = dto.PartsUsed,
+                ResolvedAt = DateTime.UtcNow
+            };
+
+            await _context.ResolutionLogs.AddAsync(resolutionLog);
+        }
+        else
+        {
+            request.ResolutionLog.ResolvedById = resolvedById;
+            request.ResolutionLog.ResolutionNotes = dto.ResolutionNotes;
+            request.ResolutionLog.WorkDone = dto.WorkDone;
+            request.ResolutionLog.PartsUsed = dto.PartsUsed;
+            request.ResolutionLog.ResolvedAt = DateTime.UtcNow;
+        }
+
+        request.Status = RequestStatus.Resolved;
+        request.ResolvedAt = DateTime.UtcNow;
+        request.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ReopenAsync(Guid requestId, Guid reopenedById, string? reason = null)
+    {
+        var request = await _context.MaintenanceRequests
+            .Include(r => r.ResolutionLog)
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request is null)
+            return false;
+
+        request.Status = request.AssignedStaffId.HasValue ? RequestStatus.Assigned : RequestStatus.Pending;
+        request.ResolvedAt = null;
+        request.UpdatedAt = DateTime.UtcNow;
+
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            var reopenComment = new Comment
+            {
+                Id = Guid.NewGuid(),
+                RequestId = requestId,
+                AuthorId = reopenedById,
+                Content = reason,
+                IsInternal = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _context.Comments.AddAsync(reopenComment);
+        }
 
         await _context.SaveChangesAsync();
         return true;

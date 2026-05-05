@@ -3,7 +3,6 @@ using Dorm.Application.Interfaces;
 using Dorm.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 namespace Dorm.Api.Controllers;
 
 [ApiController]

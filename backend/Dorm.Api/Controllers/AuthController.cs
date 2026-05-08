@@ -12,10 +12,12 @@ namespace Dorm.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUserAuthRepository _users;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IUserAuthRepository users)
     {
         _authService = authService;
+        _users = users;
     }
 
     [HttpPost("register")]
@@ -94,24 +96,41 @@ public class AuthController : ControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    public IActionResult Me()
+    public async Task<IActionResult> Me()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(userId, out var id))
+        // Use ClaimTypes constants which map to the full namespace URIs
+        var email = User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.Upn)
+            ?? User.FindFirstValue(ClaimTypes.Name)
+            ?? User.FindFirstValue("preferred_username")
+            ?? User.FindFirstValue("upn")
+            ?? User.FindFirstValue("unique_name");
+
+        if (string.IsNullOrWhiteSpace(email))
         {
             return Unauthorized(new
             {
-                message = "Your Microsoft account is not linked to a user in this database. " +
-                            "Ask an administrator to create an account with the same email address."
+                message = "No Microsoft email claim was found in the token."
+            });
+        }
+
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await _users.GetByNormalizedEmailAsync(normalizedEmail);
+
+        if (user is null || !user.IsActive)
+        {
+            return Unauthorized(new
+            {
+                message = "Your Microsoft account is not linked to a user in this database. Ask an administrator to create an account with the same email address."
             });
         }
 
         return Ok(new
         {
-            userId = id,
-            fullName = User.FindFirstValue(ClaimTypes.Name),
-            email = User.FindFirstValue(ClaimTypes.Email),
-            role = User.FindFirstValue(ClaimTypes.Role)
+            userId = user.Id,
+            fullName = user.FullName,
+            email = user.Email,
+            role = user.Role.ToString()
         });
     }
 }

@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using Dorm.Api.Authentication;
 using Dorm.Application.Interfaces;
 using Dorm.Application.Services;
 using Dorm.Infrastructure;
@@ -102,9 +101,7 @@ builder.Services.AddAuthentication(options =>
         };
     })
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"), jwtBearerScheme: "AzureAd");
-
-builder.Services.AddScoped<IClaimsTransformation, EntraUserClaimsTransformation>();
-
+        
 // CORS — allow Vite dev server
 builder.Services.AddCors(options =>
 {

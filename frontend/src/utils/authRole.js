@@ -46,7 +46,7 @@ function roleFromEmailDomain(email) {
     .trim()
     .toLowerCase();
   if (em.endsWith("@staff.com")) return "MaintenanceStaff";
-  if (em.endsWith("@student.com")) return "Student";
+  if (em.endsWith("@student.ius.edu.ba")) return "Student";
   return null;
 }
 
